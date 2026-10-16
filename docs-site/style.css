@@ -1,0 +1,26 @@
+:root{--bg:#f6f4ef;--ink:#1d2229;--muted:#59616b;--line:#d9d4c8;--accent:#c2410c;--code:#1d2229}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.65 Georgia,"Times New Roman",serif}
+.layout{display:grid;grid-template-columns:230px minmax(0,1fr);max-width:1040px;margin:0 auto;gap:2.5rem;padding:0 1.25rem}
+nav{position:sticky;top:0;align-self:start;padding:2rem 0;font:15px/1.4 system-ui,sans-serif}
+nav strong{display:block;font-size:1.25rem;margin-bottom:1rem;letter-spacing:.01em}
+nav a{display:block;padding:.3rem 0;color:var(--muted);text-decoration:none;border-left:2px solid transparent;padding-left:.7rem}
+nav a:hover{color:var(--accent);border-left-color:var(--accent)}
+main{padding:2.5rem 0 4rem;max-width:68ch}
+h1{font:700 2.4rem/1.15 system-ui,sans-serif;margin:0 0 .5rem}
+h2{font:700 1.45rem/1.25 system-ui,sans-serif;margin:3rem 0 .6rem;padding-top:1rem;border-top:1px solid var(--line)}
+h3{font:600 1.05rem system-ui,sans-serif;margin:1.6rem 0 .3rem}
+.lead{font-size:1.2rem;color:var(--muted)}
+pre{background:var(--code);color:#f1efe8;padding:1rem;border-radius:5px;overflow-x:auto;font:14px/1.5 ui-monospace,Menlo,Consolas,monospace}
+code{font:.88em ui-monospace,Menlo,Consolas,monospace;background:#ebe7dc;padding:.05rem .3rem;border-radius:3px}
+pre code{background:none;padding:0}
+table{border-collapse:collapse;width:100%;font:15px/1.45 system-ui,sans-serif;margin:1rem 0}
+th,td{border-bottom:1px solid var(--line);padding:.5rem .6rem;text-align:left;vertical-align:top}
+.flow{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;font:14px system-ui,sans-serif;margin:1rem 0}
+.flow span{background:#fff;border:1px solid var(--line);padding:.35rem .65rem;border-radius:4px}
+.flow i{color:var(--accent);font-style:normal}
+.note{border-left:4px solid var(--accent);background:#fff;padding:.7rem 1rem;font:15px/1.5 system-ui,sans-serif}
+a{color:var(--accent)}
+:focus-visible{outline:3px solid #f2b705;outline-offset:2px}
+@media(max-width:760px){.layout{grid-template-columns:1fr;gap:0}nav{position:static;padding:1rem 0 0}}

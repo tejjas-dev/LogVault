@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <h2>Archive a log file</h2>
+  <p class="hint">Choose a <code>.log</code> or <code>.txt</code> file. It is split into 1 MB blocks, each block is encrypted, then stored in the bucket.</p>
+  <form method="post" action="{{ url_for('main.upload') }}" enctype="multipart/form-data" class="row">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="file" name="logfile" accept=".log,.txt" required>
+    <button type="submit">Encrypt &amp; upload</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Upload history</h2>
+  {% if files %}
+  <div class="scroll"><table>
+    <thead><tr><th>File</th><th>Size</th><th>Blocks</th><th>Uploaded (UTC)</th><th>Integrity</th><th></th></tr></thead>
+    <tbody>
+    {% for f in files %}
+      <tr>
+        <td>{{ f.filename }}</td>
+        <td>{{ f.size_bytes|human_size }}</td>
+        <td>{{ f.block_count }}</td>
+        <td>{{ f.uploaded_at }}</td>
+        <td><span class="badge {{ 'ok' if f.status == 'Verified' else 'bad' if f.status == 'FAILED' else 'idle' }}">{{ f.status }}</span></td>
+        <td><a href="{{ url_for('main.detail', file_id=f.id) }}">Open</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}
+  <p class="hint">Nothing archived yet. Upload a log file above to get started.</p>
+  {% endif %}
+</section>
+{% endblock %}

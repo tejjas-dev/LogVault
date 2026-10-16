@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ f.filename }} - LogVault{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('main.index') }}">&larr; All files</a></p>
+<section class="card">
+  <h2>{{ f.filename }}</h2>
+  <dl>
+    <dt>Size</dt><dd>{{ f.size_bytes|human_size }} ({{ f.size_bytes }} bytes)</dd>
+    <dt>Blocks</dt><dd>{{ f.block_count }} &times; up to 1 MB, AES-256-GCM, unique nonce each</dd>
+    <dt>Original SHA-256</dt><dd><code>{{ f.sha256 }}</code></dd>
+    <dt>Uploaded</dt><dd>{{ f.uploaded_at }} UTC</dd>
+    <dt>Integrity</dt>
+    <dd><span class="badge {{ 'ok' if f.status == 'Verified' else 'bad' if f.status == 'FAILED' else 'idle' }}">{{ f.status }}</span>
+      {% if f.last_checked %}<span class="hint"> checked {{ f.last_checked }} UTC</span>{% endif %}
+      {% if f.detail %}<div class="hint">{{ f.detail }}</div>{% endif %}</dd>
+  </dl>
+  <div class="row actions">
+    <form method="post" action="{{ url_for('main.verify', file_id=f.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit">Verify integrity</button>
+    </form>
+    <a class="btn" href="{{ url_for('main.backup', file_id=f.id) }}">Download encrypted backup (.zip)</a>
+    <a class="btn" href="{{ url_for('main.restore', file_id=f.id) }}">Restore original file</a>
+  </div>
+  <p class="hint">Restore decrypts every block and compares the SHA-256 with the original. The file is only sent if it matches.</p>
+</section>
+
+<section class="card danger-zone">
+  <h3>Other actions</h3>
+  <div class="row actions">
+    {% if tamper_demo %}
+    <form method="post" action="{{ url_for('main.tamper', file_id=f.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="secondary">Demo: corrupt a block</button>
+    </form>
+    {% endif %}
+    <form method="post" action="{{ url_for('main.delete', file_id=f.id) }}" onsubmit="return confirm('Delete this file from storage and history?');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="secondary">Delete from storage</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,29 @@
+:root{--bg:#edf0f3;--ink:#16212c;--muted:#5b6774;--card:#fff;--line:#d3d9df;--accent:#0f6b63;--ok:#17703a;--ok-bg:#dff3e5;--bad:#a52a1d;--bad-bg:#fbe3df;--idle-bg:#e6e9ed}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.top{display:flex;flex-wrap:wrap;align-items:baseline;gap:.5rem 1rem;padding:1rem 1.5rem;background:var(--ink);color:#fff}
+.brand{font:700 1.4rem ui-monospace,Menlo,Consolas,monospace;color:#fff;text-decoration:none;letter-spacing:.02em}
+.tag{color:#b8c4cf;font-size:.95rem}.backend{margin-left:auto;font-size:.85rem;color:#8fd3c9}
+main{max-width:960px;margin:1.5rem auto;padding:0 1rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:1.25rem 1.5rem;margin-bottom:1.25rem}
+h2,h3{margin:.1rem 0 .6rem}
+.hint{color:var(--muted);font-size:.92rem}
+.row{display:flex;flex-wrap:wrap;gap:.75rem;align-items:center}
+button,.btn{font:inherit;background:var(--accent);color:#fff;border:0;border-radius:4px;padding:.55rem 1rem;cursor:pointer;text-decoration:none;display:inline-block}
+button.secondary{background:#fff;color:var(--ink);border:1px solid var(--line)}
+button:hover,.btn:hover{filter:brightness(1.1)}
+:focus-visible{outline:3px solid #f2b705;outline-offset:2px}
+a{color:var(--accent)}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:.5rem .6rem;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:.85rem;color:var(--muted);font-weight:600}
+.badge{padding:.12rem .55rem;border-radius:3px;font-size:.85rem;font-weight:600}
+.badge.ok{background:var(--ok-bg);color:var(--ok)}.badge.bad{background:var(--bad-bg);color:var(--bad)}.badge.idle{background:var(--idle-bg);color:var(--muted)}
+.flash{padding:.7rem 1rem;border-radius:4px;margin-bottom:1rem;border:1px solid}
+.flash.ok{background:var(--ok-bg);border-color:#a9d9b7;color:var(--ok)}.flash.error{background:var(--bad-bg);border-color:#efb5ad;color:var(--bad)}
+dl{display:grid;grid-template-columns:max-content 1fr;gap:.4rem 1.2rem;margin:0 0 1rem}dt{color:var(--muted)}dd{margin:0;overflow-wrap:anywhere}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.88em;background:#f1f3f5;padding:.05rem .3rem;border-radius:3px}
+.danger-zone{border-style:dashed}
+footer{text-align:center;color:var(--muted);font-size:.85rem;padding:1rem 0 2rem}
+@media(max-width:560px){dl{grid-template-columns:1fr}.backend{margin-left:0}}

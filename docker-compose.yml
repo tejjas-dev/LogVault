@@ -1,0 +1,13 @@
+services:
+  logvault:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env            # copy .env.example to .env first - never commit .env
+    volumes:
+      - logvault-data:/app/instance   # SQLite history (+ local bucket + dev key in local mode)
+    restart: unless-stopped
+
+volumes:
+  logvault-data:

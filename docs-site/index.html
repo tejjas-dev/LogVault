@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LogVault Documentation</title>
+<meta name="description" content="Documentation for LogVault, an encrypted cloud log archive with integrity auditing, hosted on Cloudflare Pages.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+<nav aria-label="Sections">
+  <strong>LogVault</strong>
+  <a href="#overview">Overview</a>
+  <a href="#how">How it works</a>
+  <a href="#security">Security design</a>
+  <a href="#r2">Cloudflare R2 setup</a>
+  <a href="#run">Run the app</a>
+  <a href="#pages">Deploy on Pages</a>
+  <a href="#cdn">CDN &amp; HTTPS</a>
+  <a href="#mapping">Cloud mapping</a>
+  <a href="#cleanup">Cleanup</a>
+</nav>
+<main>
+<h1>LogVault</h1>
+<p class="lead">An encrypted archive for log files. Files are split into blocks, encrypted, and stored in a private cloud bucket. Every restore is checked against a SHA-256 fingerprint.</p>
+
+<h2 id="overview">Overview</h2>
+<p>Log files often contain IP addresses, user names and error details that should not sit in plain text in the cloud. LogVault encrypts them <em>before</em> upload, so the storage provider only ever holds unreadable data. It also proves that a restored file is identical to the one that was uploaded.</p>
+<table>
+<tr><th>Feature</th><th>Implementation</th></tr>
+<tr><td>Segmentation</td><td>Files are cut into 1 MB blocks</td></tr>
+<tr><td>Encryption</td><td>AES-256-GCM, random 96-bit nonce per block</td></tr>
+<tr><td>Storage</td><td>Private Cloudflare R2 bucket via boto3 (S3 API)</td></tr>
+<tr><td>Backup &amp; restore</td><td>Download encrypted ZIP, restore online or offline</td></tr>
+<tr><td>Integrity check</td><td>SHA-256 compared after decryption</td></tr>
+<tr><td>History</td><td>SQLite table with verification status</td></tr>
+</table>
+
+<h2 id="how">How it works</h2>
+<h3>Upload</h3>
+<div class="flow"><span>.log file</span><i>&rarr;</i><span>split 1 MB blocks</span><i>&rarr;</i><span>AES-256-GCM encrypt</span><i>&rarr;</i><span>R2 bucket</span><i>&rarr;</i><span>SQLite record</span></div>
+<h3>Restore &amp; verify</h3>
+<div class="flow"><span>fetch blocks</span><i>&rarr;</i><span>decrypt + authenticate</span><i>&rarr;</i><span>join</span><i>&rarr;</i><span>SHA-256 = original?</span><i>&rarr;</i><span>PASS / FAIL</span></div>
+<p>Each file gets a folder in the bucket: <code>files/&lt;id&gt;/manifest.json</code> plus <code>files/&lt;id&gt;/blocks/000000.enc</code>, <code>000001.enc</code> and so on. A block is stored as <code>nonce (12 bytes) + ciphertext + tag (16 bytes)</code>.</p>
+
+<h2 id="security">Security design</h2>
+<table>
+<tr><th>Concern</th><th>Approach</th></tr>
+<tr><td>Keys</td><td>Master key is read from the <code>LOGVAULT_MASTER_KEY</code> environment variable. Never stored in code or in the bucket. A separate key per file is derived with HKDF.</td></tr>
+<tr><td>Credentials</td><td>R2 keys come from environment variables only.</td></tr>
+<tr><td>Public access</td><td>The bucket stays private. No ACLs are set and no public URL is enabled.</td></tr>
+<tr><td>Tampering</td><td>GCM authenticates every block. Changing one byte makes decryption fail. Block position is bound to the ciphertext, so blocks cannot be reordered.</td></tr>
+<tr><td>Form safety</td><td>CSRF tokens on every POST, upload type allow-list, size limit.</td></tr>
+</table>
+<p class="note">The manifest holds the file name, size and hash in plain text so a backup can be understood without the app. Log <em>contents</em> are always encrypted.</p>
+
+<h2 id="r2">Cloudflare R2 setup</h2>
+<ol>
+<li>Cloudflare dashboard &rarr; <strong>R2 Object Storage</strong> &rarr; create bucket <code>logvault-archive</code>. Leave public access <strong>disabled</strong>.</li>
+<li><strong>Manage R2 API Tokens</strong> &rarr; create a token with <em>Object Read &amp; Write</em> limited to that bucket.</li>
+<li>Copy the Account ID, Access Key ID and Secret Access Key.</li>
+<li>Put them in <code>.env</code> (see below). The secret is shown only once.</li>
+</ol>
+<pre><code>STORAGE_BACKEND=r2
+R2_ACCOUNT_ID=...
+R2_ACCESS_KEY_ID=...
+R2_SECRET_ACCESS_KEY=...
+R2_BUCKET=logvault-archive
+LOGVAULT_MASTER_KEY=&lt;output of python generate_key.py&gt;</code></pre>
+
+<h2 id="run">Run the app</h2>
+<pre><code>cp .env.example .env
+docker compose up --build
+# open http://localhost:8000</code></pre>
+<p>With <code>STORAGE_BACKEND=local</code> everything works offline, using a folder as a pretend bucket.</p>
+
+<h2 id="pages">Deploy this site on Cloudflare Pages</h2>
+<p>This documentation is plain HTML in the <code>docs-site/</code> folder. No build step is needed.</p>
+<ol>
+<li>Push the repository to GitHub.</li>
+<li>Cloudflare dashboard &rarr; <strong>Workers &amp; Pages</strong> &rarr; Create &rarr; Pages &rarr; <em>Connect to Git</em>.</li>
+<li>Select the repository. Framework preset: <strong>None</strong>. Build command: leave empty. Build output directory: <code>docs-site</code>.</li>
+<li>Save and deploy. The site is live at <code>https://&lt;project&gt;.pages.dev</code>.</li>
+</ol>
+<p>Or from the command line:</p>
+<pre><code>npx wrangler pages deploy docs-site --project-name logvault-docs</code></pre>
+
+<h2 id="cdn">CDN &amp; HTTPS</h2>
+<p>A CDN keeps copies of your static files on servers in many cities and answers each visitor from the closest one. That lowers latency and reduces load on the origin.</p>
+<ul>
+<li><strong>Global delivery:</strong> Cloudflare Pages serves the site from Cloudflare's worldwide edge network automatically. Nothing to configure.</li>
+<li><strong>HTTPS:</strong> every <code>*.pages.dev</code> site gets a free TLS certificate. A custom domain added under <em>Custom domains</em> gets one too.</li>
+<li><strong>Check it:</strong> run <code>curl -I https://&lt;project&gt;.pages.dev</code> and look for the <code>cf-ray</code> header (shows which edge city answered) and <code>server: cloudflare</code>.</li>
+<li><strong>Caching:</strong> repeat the request and check <code>cf-cache-status</code>. <code>HIT</code> means it came from the edge cache.</li>
+</ul>
+<p class="note">Only this static documentation goes through the CDN. Encrypted log blocks are never published; the R2 bucket is private and accessed only by the Flask app.</p>
+
+<h2 id="mapping">Mapping to AWS / Azure / Google Cloud</h2>
+<table>
+<tr><th>Concept</th><th>This project</th><th>Equivalent</th></tr>
+<tr><td>Object storage</td><td>Cloudflare R2</td><td>AWS S3, Azure Blob Storage, Google Cloud Storage</td></tr>
+<tr><td>Static site hosting</td><td>Cloudflare Pages</td><td>S3 static website, Azure Static Web Apps, Firebase Hosting</td></tr>
+<tr><td>CDN + HTTPS</td><td>Cloudflare edge network</td><td>AWS CloudFront + ACM certificate, Azure Front Door, Cloud CDN</td></tr>
+</table>
+<p>R2 speaks the S3 API, so only the endpoint, region and credentials in <code>logvault/storage.py</code> need changing to use AWS S3 instead (the boto3 calls stay the same).</p>
+
+<h2 id="cleanup">Cleanup</h2>
+<ul>
+<li>Delete test files from the app (each file page has a delete button) or empty the bucket in the R2 dashboard.</li>
+<li>Delete the R2 bucket and revoke the API token.</li>
+<li>Delete the Pages project.</li>
+<li><code>docker compose down -v</code> removes the local database volume.</li>
+</ul>
+</main>
+</div>
+</body>
+</html>
